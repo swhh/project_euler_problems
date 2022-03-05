@@ -1,5 +1,8 @@
 from itertools import chain, permutations, product
 import math
+from cProfile import Profile
+from pstats import Stats
+from functools import cache
 FILE = "p096_sudoku.txt"
 
 
@@ -19,11 +22,18 @@ def read_sudoku_files(file):
 class Sudoku(object):
     def __init__(self, sudoku):
         self.puzzle = sudoku
+        self.row_filled_positions = []
+        self.row_numbers = []
+        for row in self.puzzle:
+            dic = {i: row[i] for i in range(9) if row[i]}
+            self.row_filled_positions.append(dic)
+            self.row_numbers.append(set(row))
 
     def get_row(self, puzzle_row):
         """Return number for position in puzzle"""
         return self.puzzle[puzzle_row]
 
+    @cache
     def value_in_col(self, col, value, i):
         """Return true if value in puzzle col except row i"""
         for j in range(9):
@@ -39,6 +49,7 @@ class Sudoku(object):
         square = (row[start_col * 3:start_col * 3 + 3] for row in rows)
         return square, start_row
 
+    @cache
     def value_in_square(self, square_num, value, i):
         """Return true if value in 3x3 square in square except row i"""
         square, start_row = self.get_square(square_num)
@@ -58,16 +69,9 @@ class Sudoku(object):
         return grid
 
 
+@cache
 def find_square_num(row, col):
     return math.floor(row / 3) * 3 + math.floor(col / 3)
-
-
-def apply_mask(row, possible):
-    for i in range(len(row)):
-        if row[i]:
-            if row[i] != possible[i]:
-                return False
-    return True
 
 
 def filter_possibles(puzzle, possible_rows, row_num):
@@ -108,15 +112,26 @@ def squares_possible_fit(square_one, square_two, square_three):
     return True
 
 
+def permute_update(permut, filled_positions):
+    permut = list(permut)
+    for key, val in filled_positions.items():
+        permut.insert(key, val)
+    return tuple(permut)
+
+
 class FilterRows(object):
-    def __init__(self, possibles, i, puzzle):
-        self.possibles = possibles
+    def __init__(self, i, puzzle):
         self.i = i
         self.puzzle = puzzle
 
     def __iter__(self):
-        row = puzzle.get_row(self.i)
-        possible_rows = (possible for possible in self.possibles if apply_mask(row, possible))
+        filled_positions = self.puzzle.row_filled_positions[self.i]
+        nums = self.puzzle.row_numbers[self.i]
+        if not nums:
+            possible_rows = permutations(range(1, 10))
+        else:
+            possibles = permutations(set(range(1, 10)) - nums)
+            possible_rows = (permute_update(permut, filled_positions) for permut in possibles)
         possible_rows = filter_possibles(self.puzzle, possible_rows, self.i)
         yield from possible_rows
 
@@ -138,8 +153,7 @@ def sudoku_solver(puzzle):
     all_possible_squares = []
 
     for i in range(9):
-        possibles = permutations(range(1, 10))
-        possible_rows = FilterRows(possibles, i, puzzle)
+        possible_rows = FilterRows(i, puzzle)
         all_possible_rows.append(possible_rows)
 
     for i in range(3):
@@ -155,14 +169,31 @@ def sudoku_solver(puzzle):
 
 def solve_sudokus(file):
     sudoku_puzzles = read_sudoku_files(file)
-    for puzzle in sudoku_puzzles:
+    for i, puzzle in enumerate(sudoku_puzzles):
         puzzle = Sudoku(puzzle)
+        print(f'Sudoku Puzzle {i}\n')
         print(sudoku_solver(puzzle))
 
 
 sudoku_files = read_sudoku_files(FILE)
 first = next(sudoku_files)
-puzzle = Sudoku(first)
+second = next(sudoku_files)
+third = next(sudoku_files)
+fourth = next(sudoku_files)
+fifth = next(sudoku_files)
+sixth = next(sudoku_files)
+seventh = next(sudoku_files)
+puzzle = Sudoku(seventh)
+
+
+test = lambda: sudoku_solver(puzzle)
+profiler = Profile()
+profiler.runcall(test)
+
+stats = Stats(profiler)
+stats.strip_dirs()
+stats.sort_stats('cumulative')
+stats.print_stats()
 
 # if __name__ == '__main__':
 #     solve_sudokus(FILE)
