@@ -37,7 +37,7 @@ def min_multiply_sum(z):
 
     for i in range(1, k + 1):
         total += (i * len_min_multiple(i))
-    if l - k:  # if z not a power of 2, need to add to total; two cases: 1. m(z) = k + 1 2. m(z) = k + 2 for k >= 4
+    if l - k:  # if z not a power of 2, add to total; two cases: 1. m(z) = k + 1 2. m(z) = k + 2 for k >= 4
         x, y = calc_x_and_y(k + 1)
         if x <= z <= y:  # case 2a
             total += ((k + 1) * len_min_multiple(k + 1))

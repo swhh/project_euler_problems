@@ -31,15 +31,8 @@ def read_matrix(file):
     with open(file) as f:
         graph = defaultdict(dict)
         for i, line in enumerate(f):
-            row = [int(num) for num in line[:-1].split(',')]
-            if not i:
-                graph[0][1] = row[0]
-            for j, num in enumerate(row):
-                node = len(row) * i + j
-                if j:
-                    graph[node][node + 1] = num
-                if i:
-                    graph[node + 1 - len(row)][node + 1] = num
+            row = (int(num) for num in line[:-1].split(',') if num != '')
+
     return graph
 
 
