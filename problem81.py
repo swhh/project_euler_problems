@@ -31,8 +31,15 @@ def read_matrix(file):
     with open(file) as f:
         graph = defaultdict(dict)
         for i, line in enumerate(f):
-            row = (int(num) for num in line[:-1].split(',') if num != '')
-
+            row = [int(num) for num in line[:-1].split(',') if num != '']
+            if not i:
+                graph[0][1] = row[0]
+            for j, num in enumerate(row):
+                node = len(row) * i + j
+                if j:
+                    graph[node][node + 1] = num
+                if i:
+                    graph[node + 1 - len(row)][node + 1] = num
     return graph
 
 
@@ -53,7 +60,7 @@ def test():
             test_graph[i][i + 1] = num
         if i > 4:
             test_graph[i - 4][i + 1] = num
-    assert minimal_path_sum(test_graph) == 2472
+    assert minimal_path_sum(test_graph) == 2427
 
 
 if __name__ == '__main__':
