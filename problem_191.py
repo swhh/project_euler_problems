@@ -1,4 +1,5 @@
 from functools import cache
+import itertools
 
 """A particular school offers cash rewards to children with good attendance and punctuality. If they are absent for three consecutive days or late on more than one occasion then they forfeit their prize.
 
@@ -15,38 +16,37 @@ LAOO LAOA LAAO
 How many "prize" strings exist over a 30-day period?"""
 
 
-def remove(numbers, k_consecutive):
-    power = numbers - k_consecutive + 1
-    sub_result = sum(pow(numbers, power - j) * scs(j - 2, numbers, k_consecutive) for j in range(k_consecutive + 2, power + 1))
-    return (numbers - 1) * sub_result
+def brute_force_prize_string_count(days):
+    count = 0
+    for seq in itertools.product('ALO', repeat=days):
+        str_seq = ''.join(seq)
+        if 'AAA' not in str_seq:
+            if str_seq.count('L') < 2:
+                count += 1
+    return count
 
 
 @cache
-def scs(length, numbers, k_consecutive):
-    """Calculate no of sequences with at least k_consecutive-length single char subsequence for string of length
-    and numbers of chars e.g. no of sequences with at least one 'AAA'"""
-    if k_consecutive > length:
-        return 0
-    if length == k_consecutive:
-        return 1
-    power = length - k_consecutive
-    total = pow(numbers, power)
-    total += (numbers - 1) * pow(numbers, power - 1) * power
-    if k_consecutive >= length / 2:
-        return total
-    to_remove = remove(numbers, k_consecutive)
-    total -= to_remove
-    return total
+def tribo(n):
+    """Version of the Tribonacci numbers to calculate no of binary strings of length n
+    with fewer than 3 consecutive 111"""
+    if n < 3:
+        return pow(2, n)
+    return sum(tribo(n - i) for i in range(1, 4))
 
 
 def number_prize_strings(days):
-    fewer_than_two_late_and_fewer_than_three_absences = pow(2, days) - scs(days, 2, 3)
-    fewer_than_two_late_and_fewer_than_three_absences += days * pow(2, days - 1)
+    fewer_than_two_late_and_fewer_than_three_absences = tribo(days)
     for j in range(days):
-        subtotal = scs(j, 2, 3) * pow(2, days - 1 - j)
-        subtotal += (scs(days - 1 - j, 2, 3) * (pow(2, j) - scs(j, 2, 3)))
-        fewer_than_two_late_and_fewer_than_three_absences -= subtotal
+        subtotal = tribo(j) * tribo(days - 1 - j)
+        fewer_than_two_late_and_fewer_than_three_absences += subtotal
     return fewer_than_two_late_and_fewer_than_three_absences
 
 
-print(number_prize_strings(4))
+def test():
+    for i in range(4, 10):
+        assert brute_force_prize_string_count(i) == number_prize_strings(i)
+
+
+if __name__ == '__main__':
+    test()
